@@ -21,17 +21,54 @@ function mapStatus(s: string): MatchResult["status"] {
   return "SCHEDULED";
 }
 
-function flagEmoji(cca2: string): string {
-  // Convert 2-letter country code to flag emoji
+// TLA (football-data.org) → ISO 3166-1 alpha-2 for correct flag emoji
+const TLA_TO_ALPHA2: Record<string, string> = {
+  MEX: "MX", KOR: "KR", CZE: "CZ", RSA: "ZA",
+  SUI: "CH", CAN: "CA", QAT: "QA", BIH: "BA",
+  SCO: "GB", BRA: "BR", MAR: "MA", HAI: "HT",
+  USA: "US", AUS: "AU", TUR: "TR", PAR: "PY",
+  GER: "DE", CIV: "CI", ECU: "EC", CUW: "CW",
+  SWE: "SE", JPN: "JP", NED: "NL", TUN: "TN",
+  POR: "PT", ARG: "AR", CHI: "CL", ALB: "AL",
+  ESP: "ES", CMR: "CM", NZL: "NZ", UKR: "UA",
+  FRA: "FR", SEN: "SN", COL: "CO", VEN: "VE",
+  ENG: "GB", COD: "CD", PAN: "PA", IRN: "IR",
+  URU: "UY", NGA: "NG", SVK: "SK", IND: "IN",
+  BEL: "BE", SAU: "SA", AUT: "AT", CRC: "CR",
+  NOR: "NO", EGY: "EG", JOR: "JO", ALG: "DZ",
+  CPV: "CV", UZB: "UZ", GHA: "GH", CRO: "HR",
+};
+
+// Dutch team name overrides keyed by TLA
+const TLA_TO_NL: Record<string, string> = {
+  MEX: "Mexico",       KOR: "Zuid-Korea",    CZE: "Tsjechië",      RSA: "Zuid-Afrika",
+  SUI: "Zwitserland",  CAN: "Canada",        QAT: "Qatar",          BIH: "Bosnië-Herz.",
+  SCO: "Schotland",    BRA: "Brazilië",      MAR: "Marokko",        HAI: "Haïti",
+  USA: "Ver. Staten",  AUS: "Australië",     TUR: "Turkije",        PAR: "Paraguay",
+  GER: "Duitsland",    CIV: "Ivoorkust",     ECU: "Ecuador",        CUW: "Curaçao",
+  SWE: "Zweden",       JPN: "Japan",         NED: "Nederland",      TUN: "Tunesië",
+  POR: "Portugal",     ARG: "Argentinië",    CHI: "Chili",          ALB: "Albanië",
+  ESP: "Spanje",       CMR: "Kameroen",      NZL: "Nieuw-Zeeland",  UKR: "Oekraïne",
+  FRA: "Frankrijk",    SEN: "Senegal",       COL: "Colombia",       VEN: "Venezuela",
+  ENG: "Engeland",     COD: "DR Congo",      PAN: "Panama",         IRN: "Iran",
+  URU: "Uruguay",      NGA: "Nigeria",       SVK: "Slowakije",      IND: "India",
+  BEL: "België",       SAU: "Saoedi-Arabië", AUT: "Oostenrijk",     CRC: "Costa Rica",
+  NOR: "Noorwegen",    EGY: "Egypte",        JOR: "Jordanië",       ALG: "Algerije",
+  CPV: "Kaapverdië",   UZB: "Oezbekistan",   GHA: "Ghana",          CRO: "Kroatië",
+};
+
+function flagEmoji(alpha2: string): string {
   const offset = 0x1F1E6 - 65;
-  return [...cca2.toUpperCase()].map((c) => String.fromCodePoint(c.charCodeAt(0) + offset)).join("");
+  return [...alpha2.toUpperCase()].map((c) => String.fromCodePoint(c.charCodeAt(0) + offset)).join("");
 }
 
-function mapTeam(t: { name: string; shortName: string; tla: string; crest?: string }): Team {
+function mapTeam(t: { name: string; shortName: string; tla: string }): Team {
+  const tla = t.tla?.toUpperCase() ?? "";
+  const alpha2 = TLA_TO_ALPHA2[tla] ?? tla.slice(0, 2);
   return {
-    name: t.shortName || t.name,
-    flag: flagEmoji(t.tla.slice(0, 2)),
-    code: t.tla,
+    name: TLA_TO_NL[tla] ?? t.shortName ?? t.name,
+    flag: flagEmoji(alpha2),
+    code: tla,
   };
 }
 
@@ -41,7 +78,9 @@ function buildGroups(standingsData: any, matchesData: any): Group[] {
   for (const standing of standingsData.standings) {
     if (standing.type !== "TOTAL") continue;
 
-    const groupLetter = standing.group?.replace("GROUP_", "") ?? "?";
+    // API returns "GROUP_A" or "Group A" — extract single letter
+    const raw = standing.group ?? "";
+    const groupLetter = raw.replace(/^GROUP_/i, "").replace(/^Group\s*/i, "").trim() || "?";
     const groupName = `Groep ${groupLetter}`;
 
     const standings: Standing[] = standing.table.map((row: any) => ({
