@@ -25,66 +25,53 @@ export default function Home() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#0d1b2a] text-white">
-      <header className="border-b border-white/10 px-6 py-4">
-        <div className="max-w-screen-xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⚽</span>
-            <span className="font-bold text-lg tracking-wide uppercase">
-              FIFA World Cup 26™
-            </span>
+    <div className="h-screen overflow-hidden flex flex-col bg-[#0d1b2a] text-white select-none">
+      {/* Slim header */}
+      <header className="shrink-0 flex items-center justify-between border-b border-white/10 px-5 py-0" style={{ height: 44 }}>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">⚽</span>
+            <span className="font-bold text-sm tracking-widest uppercase">FIFA World Cup 26™</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-white/50">
-            {isValidating && (
-              <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            )}
-            {lastUpdated && <span>Bijgewerkt: {lastUpdated}</span>}
+          <div className="flex gap-4 ml-4">
+            {(["groups", "knockout"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`text-xs font-bold uppercase tracking-wider py-0.5 border-b-2 transition-colors ${
+                  tab === t ? "border-[#00d4aa] text-[#00d4aa]" : "border-transparent text-white/50 hover:text-white"
+                }`}
+              >
+                {t === "groups" ? "Groepsfase" : "Knock-out"}
+              </button>
+            ))}
           </div>
         </div>
-        <div className="max-w-screen-xl mx-auto mt-3 flex gap-6">
-          {(["groups", "knockout"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`pb-2 text-sm font-semibold uppercase tracking-wider border-b-2 transition-colors ${
-                tab === t
-                  ? "border-[#00d4aa] text-[#00d4aa]"
-                  : "border-transparent text-white/60 hover:text-white"
-              }`}
-            >
-              {t === "groups" ? "Groepsfase" : "Knock-out fase"}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 text-[11px] text-white/40">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-sm bg-[#00d4aa] inline-block" />1–2: door
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-sm bg-yellow-500 inline-block" />3e: beste 8
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-sm bg-white/20 inline-block" />uit
+          </span>
+          {isValidating && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />}
+          {lastUpdated && <span>↻ {lastUpdated}</span>}
         </div>
       </header>
 
-      <main className="max-w-screen-xl mx-auto px-4 py-8">
+      {/* Content */}
+      <main className="flex-1 min-h-0 px-3 py-2">
         {isLoading ? (
-          <div className="flex items-center justify-center h-64 text-white/40">
-            Laden…
-          </div>
+          <div className="flex items-center justify-center h-full text-white/30 text-sm">Laden…</div>
         ) : tab === "groups" ? (
-          <>
-            <div className="flex flex-wrap gap-4 mb-6 text-xs text-white/60">
-              <span className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-sm bg-[#00d4aa] inline-block" />
-                1–2: directe plaatsing Laatste 32
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-sm bg-yellow-500 inline-block" />
-                3e plek: beste 8 gaan door
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-sm bg-white/20 inline-block" />
-                uitgeschakeld
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {(data?.groups ?? []).map((group) => (
-                <GroupCard key={group.name} group={group} />
-              ))}
-            </div>
-          </>
+          <div className="grid grid-cols-4 grid-rows-3 gap-2 h-full">
+            {(data?.groups ?? []).map((group) => (
+              <GroupCard key={group.name} group={group} />
+            ))}
+          </div>
         ) : (
           <KnockoutBracket matches={data?.knockout ?? []} />
         )}
