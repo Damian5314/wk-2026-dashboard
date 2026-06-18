@@ -16,7 +16,7 @@ export default function Home() {
     knockout: KnockoutMatch[];
     lastUpdated: string;
   }>("/api/standings", fetcher, {
-    refreshInterval: 60000,
+    refreshInterval: 300000, // 5 min — server serveert gecachete data, geen extra API-calls
     revalidateOnFocus: true,
   });
 

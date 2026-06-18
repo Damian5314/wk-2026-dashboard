@@ -9,7 +9,7 @@ const BASE_URL = "https://api.football-data.org/v4";
 async function apiFetch(path: string) {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { "X-Auth-Token": API_KEY! },
-    next: { revalidate: 60 },
+    next: { revalidate: 10800 }, // 3 uur → max ~8 API-calls per dag
   });
   if (!res.ok) throw new Error(`football-data.org ${res.status}: ${path}`);
   return res.json();
