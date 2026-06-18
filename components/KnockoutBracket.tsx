@@ -11,49 +11,41 @@ function KnockoutCard({ match, flip = false }: { match: KnockoutMatch; flip?: bo
   ];
 
   return (
-    <div className={`bg-[#112030] rounded border border-white/10 overflow-hidden w-full ${live ? "border-red-500/50" : ""}`}>
-      {live && (
-        <div className="text-[8px] text-red-400 font-bold px-1.5 pt-0.5 flex items-center gap-1">
-          <span className="w-1 h-1 rounded-full bg-red-400 animate-pulse inline-block" />LIVE
-        </div>
-      )}
+    <div className={`bg-[#112030] rounded border border-white/10 overflow-hidden ${live ? "border-red-500/40" : ""}`}>
       {sides.map((side, i) => (
         <div key={i} className={`flex items-center px-1.5 py-[3px] border-b border-white/5 last:border-0 ${flip ? "flex-row-reverse" : ""}`}>
           <span className={`flex items-center gap-1 text-[10px] min-w-0 flex-1 ${flip ? "flex-row-reverse" : ""}`}>
             <span className="shrink-0">{side.team?.flag ?? "🏳️"}</span>
             <span className={`truncate text-white/75 ${flip ? "text-right" : ""}`}>{side.team?.name ?? "TBD"}</span>
           </span>
-          <span className="font-mono font-bold text-[11px] shrink-0 w-5 text-center">
-            {done || live
-              ? <span>{side.score ?? "-"}{side.pen !== null ? <sup className="text-[7px]">{side.pen}</sup> : ""}</span>
-              : <span className="text-white/20">-</span>}
+          <span className="font-mono font-bold text-[10px] shrink-0 w-5 text-center text-white/50">
+            {done || live ? (side.score ?? "-") : <span className="text-white/20">-</span>}
           </span>
         </div>
       ))}
       {!done && !live && (
-        <div className="text-[8px] text-white/25 px-1.5 pb-1 text-center">{date}</div>
+        <div className="text-[8px] text-white/20 text-center pb-[2px]">{date}</div>
       )}
     </div>
   );
 }
 
-function Column({
+function RoundCol({
   label,
   matches,
   flip = false,
-  width = "w-[130px]",
 }: {
   label: string;
   matches: KnockoutMatch[];
   flip?: boolean;
-  width?: string;
 }) {
   return (
-    <div className={`flex flex-col ${width} shrink-0`}>
-      <div className="text-[8px] font-bold uppercase tracking-widest text-white/35 text-center mb-1 shrink-0">
+    <div className="flex flex-col h-full w-[130px] shrink-0">
+      <p className="text-[8px] font-bold uppercase tracking-widest text-white/30 text-center mb-1 shrink-0">
         {label}
-      </div>
-      <div className="flex flex-col justify-around flex-1 gap-1">
+      </p>
+      {/* evenly distribute cards using flex gap trick */}
+      <div className="flex flex-col flex-1 justify-around gap-1">
         {matches.map((m) => (
           <KnockoutCard key={m.id} match={m} flip={flip} />
         ))}
@@ -70,49 +62,52 @@ export default function KnockoutBracket({ matches }: { matches: KnockoutMatch[] 
   const fin = matches.filter((m) => m.round === "Finale");
   const trd = matches.filter((m) => m.round === "Troostfinale");
 
-  // Split each round evenly: left half and right half
-  const half = (arr: KnockoutMatch[]) => ({
-    left: arr.slice(0, Math.ceil(arr.length / 2)),
-    right: arr.slice(Math.ceil(arr.length / 2)),
-  });
+  const half = (arr: KnockoutMatch[]) => [
+    arr.slice(0, Math.ceil(arr.length / 2)),
+    arr.slice(Math.ceil(arr.length / 2)),
+  ] as const;
 
-  const r32h = half(r32);
-  const r16h = half(r16);
-  const qfh  = half(qf);
-  const sfh  = half(sf);
+  const [r32L, r32R] = half(r32);
+  const [r16L, r16R] = half(r16);
+  const [qfL,  qfR ] = half(qf);
+  const [sfL,  sfR ] = half(sf);
+
+  const leftCols  = [r32L, r16L, qfL, sfL].filter((c) => c.length > 0);
+  const rightCols = [sfR,  qfR,  r16R, r32R].filter((c) => c.length > 0);
+
+  const leftLabels  = ["Laatste 32", "Achtste finale", "Kwartfinale", "Halve finale"].slice(0, leftCols.length);
+  const rightLabels = ["Halve finale", "Kwartfinale", "Achtste finale", "Laatste 32"].slice(0, rightCols.length);
 
   return (
-    <div className="h-full flex items-stretch gap-2 overflow-x-auto overflow-y-hidden px-1">
-      {/* LEFT SIDE — reads left → right toward center */}
-      {r32h.left.length > 0  && <Column label="Laatste 32"    matches={r32h.left}  />}
-      {r16h.left.length > 0  && <Column label="Achtste finale" matches={r16h.left}  />}
-      {qfh.left.length > 0   && <Column label="Kwartfinale"   matches={qfh.left}   />}
-      {sfh.left.length > 0   && <Column label="Halve finale"  matches={sfh.left}   />}
+    <div className="h-full flex items-center justify-center gap-2 overflow-hidden px-2">
+      {/* LEFT — outermost to innermost */}
+      {leftCols.map((col, i) => (
+        <RoundCol key={`l-${i}`} label={leftLabels[i]} matches={col} />
+      ))}
 
-      {/* CENTER — finale + troostfinale */}
-      <div className="flex flex-col shrink-0 w-[140px] justify-center gap-3">
+      {/* CENTER */}
+      <div className="flex flex-col items-center justify-center gap-4 w-[144px] shrink-0 h-full">
         {fin.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <div className="text-[9px] font-bold uppercase tracking-widest text-[#00d4aa] text-center mb-1">⚽ Finale</div>
+          <div className="w-full">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-[#00d4aa] text-center mb-1">⚽ Finale</p>
             {fin.map((m) => <KnockoutCard key={m.id} match={m} />)}
           </div>
         )}
         {trd.length > 0 && (
-          <div className="flex flex-col gap-1 mt-2">
-            <div className="text-[8px] font-bold uppercase tracking-widest text-white/35 text-center mb-1">3e plek</div>
+          <div className="w-full">
+            <p className="text-[8px] font-bold uppercase tracking-widest text-white/30 text-center mb-1">3e Plek</p>
             {trd.map((m) => <KnockoutCard key={m.id} match={m} />)}
           </div>
         )}
         {fin.length === 0 && trd.length === 0 && (
-          <div className="text-white/20 text-[10px] text-center">Nog niet bepaald</div>
+          <p className="text-[10px] text-white/20 text-center">Nog niet bepaald</p>
         )}
       </div>
 
-      {/* RIGHT SIDE — reads right → left toward center (mirrored) */}
-      {sfh.right.length > 0  && <Column label="Halve finale"  matches={sfh.right}  flip />}
-      {qfh.right.length > 0  && <Column label="Kwartfinale"   matches={qfh.right}  flip />}
-      {r16h.right.length > 0 && <Column label="Achtste finale" matches={r16h.right} flip />}
-      {r32h.right.length > 0 && <Column label="Laatste 32"    matches={r32h.right} flip />}
+      {/* RIGHT — innermost to outermost */}
+      {rightCols.map((col, i) => (
+        <RoundCol key={`r-${i}`} label={rightLabels[i]} matches={col} flip />
+      ))}
     </div>
   );
 }
