@@ -4,25 +4,58 @@ function KnockoutCard({ match, flip = false }: { match: KnockoutMatch; flip?: bo
   const done = match.status === "FINISHED";
   const live = match.status === "LIVE";
   const date = new Date(match.date).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+  const hasPen = done && match.homePenalty !== null && match.awayPenalty !== null;
 
   const sides = [
     { team: match.homeTeam, score: match.homeScore, pen: match.homePenalty },
     { team: match.awayTeam, score: match.awayScore, pen: match.awayPenalty },
   ];
 
+  // Determine winner index (0 = home, 1 = away, null = no result yet)
+  let winnerIdx: number | null = null;
+  if (done) {
+    if (hasPen) {
+      winnerIdx = (match.homePenalty ?? 0) > (match.awayPenalty ?? 0) ? 0 : 1;
+    } else if (match.homeScore !== null && match.awayScore !== null) {
+      if (match.homeScore !== match.awayScore)
+        winnerIdx = match.homeScore > match.awayScore ? 0 : 1;
+    }
+  }
+
   return (
-    <div className={`bg-[#112030] rounded border border-white/10 overflow-hidden ${live ? "border-red-500/40" : ""}`}>
-      {sides.map((side, i) => (
-        <div key={i} className={`flex items-center px-1.5 py-[3px] border-b border-white/5 last:border-0 ${flip ? "flex-row-reverse" : ""}`}>
-          <span className={`flex items-center gap-1 text-[10px] min-w-0 flex-1 ${flip ? "flex-row-reverse" : ""}`}>
-            <span className="shrink-0">{side.team?.flag ?? "🏳️"}</span>
-            <span className={`truncate text-white/75 ${flip ? "text-right" : ""}`}>{side.team?.name ?? "TBD"}</span>
-          </span>
-          <span className="font-mono font-bold text-[10px] shrink-0 w-5 text-center text-white/50">
-            {done || live ? (side.score ?? "-") : <span className="text-white/20">-</span>}
+    <div className={`bg-[#112030] rounded border overflow-hidden ${live ? "border-red-500/40" : "border-white/10"}`}>
+      {sides.map((side, i) => {
+        const isWinner = winnerIdx === i;
+        const isLoser = winnerIdx !== null && winnerIdx !== i;
+        return (
+          <div key={i} className={`flex items-center px-1.5 py-[3px] border-b border-white/5 last:border-0
+            ${isWinner ? "bg-[#00d4aa]/10" : ""}
+            ${flip ? "flex-row-reverse" : ""}`}>
+            <span className={`flex items-center gap-1 text-[10px] min-w-0 flex-1 ${flip ? "flex-row-reverse" : ""}`}>
+              <span className="shrink-0">{side.team?.flag ?? "🏳️"}</span>
+              <span className={`truncate ${flip ? "text-right" : ""}
+                ${isWinner ? "text-white font-bold" : isLoser ? "text-white/35" : "text-white/75"}`}>
+                {side.team?.name ?? "TBD"}
+              </span>
+            </span>
+            <span className={`font-mono font-bold text-[10px] shrink-0 w-5 text-center
+              ${isWinner ? "text-[#00d4aa]" : isLoser ? "text-white/30" : "text-white/50"}`}>
+              {done || live ? (side.score ?? "-") : <span className="text-white/20">-</span>}
+            </span>
+          </div>
+        );
+      })}
+      {/* Penalties badge */}
+      {hasPen && (
+        <div className={`flex items-center justify-between px-1.5 py-[2px] bg-yellow-500/10 border-t border-yellow-500/20 ${flip ? "flex-row-reverse" : ""}`}>
+          <span className="text-[8px] text-yellow-400 font-bold uppercase tracking-wider">Pen.</span>
+          <span className="text-[8px] font-mono text-yellow-400 font-bold">
+            {flip
+              ? `${match.awayPenalty} – ${match.homePenalty}`
+              : `${match.homePenalty} – ${match.awayPenalty}`}
           </span>
         </div>
-      ))}
+      )}
       {!done && !live && (
         <div className="text-[8px] text-white/20 text-center pb-[2px]">{date}</div>
       )}
