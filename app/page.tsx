@@ -9,7 +9,7 @@ import { Group, KnockoutMatch } from "@/lib/wc2026-data";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function Home() {
-  const [tab, setTab] = useState<"groups" | "knockout">("groups");
+  const [tab, setTab] = useState<"groups" | "knockout">("knockout");
 
   const { data, isLoading, isValidating } = useSWR<{
     groups: Group[];
