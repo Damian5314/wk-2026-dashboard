@@ -59,6 +59,9 @@ export default function Home() {
           </span>
           {isValidating && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />}
           {lastUpdated && <span>↻ {lastUpdated}</span>}
+          <a href="/fitbit" className="flex items-center gap-1 text-white/40 hover:text-white/70 transition-colors ml-2 border-l border-white/10 pl-3">
+            <span>⌚</span><span>Fitbit</span>
+          </a>
         </div>
       </header>
 
